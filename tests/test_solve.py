@@ -8,7 +8,6 @@ These require Julia + juliacall to be installed:
 import sys
 sys.path.insert(0, "src")
 
-import pytest
 from jumpy import Model, Iterator, Parameter, minimize, maximize, sin, exp
 
 
