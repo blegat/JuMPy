@@ -127,3 +127,4 @@ if __name__ == "__main__":
             print(f"  FAIL {test.__name__}: {e}")
             traceback.print_exc()
     print(f"\n{passed} passed, {failed} failed")
+    sys.exit(1 if failed else 0)

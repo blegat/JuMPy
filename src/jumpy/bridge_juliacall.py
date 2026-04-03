@@ -98,8 +98,8 @@ def build_moi_model(jl, model: Model) -> list[float]:
     # Add variables — one bulk call per block
     all_jl_vars = []
     for block in model._var_blocks:
-        lower = block.lower if block.lower is not None else jl.nothing
-        upper = block.upper if block.upper is not None else jl.nothing
+        lower = float(block.lower) if block.lower is not None else jl.nothing
+        upper = float(block.upper) if block.upper is not None else jl.nothing
         block_vars = jl._jumpy_add_variables_b(
             optimizer, block.count, lower, upper,
         )
