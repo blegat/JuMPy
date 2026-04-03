@@ -103,17 +103,15 @@ class JuliaCallBackend(Backend):
             ) from None
         # Install and load Julia packages on first use
         jl.seval("using Pkg")
-        for pkg in ["MathOptInterface", "HiGHS"]:
+        for pkg in ["MathOptInterface", "HiGHS", "GenOpt"]:
             jl.seval(f"""
                 if !haskey(Pkg.project().dependencies, "{pkg}")
                     Pkg.add("{pkg}")
                 end
             """)
-        jl.seval("""
-            using MathOptInterface
-            const MOI = MathOptInterface
-            using HiGHS
-        """)
+        jl.seval("import MathOptInterface as MOI")
+        jl.seval("import GenOpt")
+        jl.seval("import HiGHS")
         # TODO: load GenOpt once it's registered / available
         self._jl = jl
 
