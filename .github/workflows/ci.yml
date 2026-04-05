@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-expressions:
+    name: Python expression tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run expression tests
+        run: python tests/test_expressions.py
+
+  test-solve:
+    name: End-to-end solve (juliacall + HiGHS)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+        julia-version: ["1.11", "1.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.julia-version }}
+
+      - uses: julia-actions/cache@v2
+
+      - name: Install juliacall
+        run: pip install juliacall
+
+      - name: Preinstall Julia packages
+        run: |
+          julia -e '
+            using Pkg
+            Pkg.add(["MathOptInterface", "HiGHS"])
+            using MathOptInterface
+            using HiGHS
+          '
+
+      - name: Run solve tests
+        run: python tests/test_solve.py

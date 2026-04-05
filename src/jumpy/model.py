@@ -20,6 +20,7 @@ from jumpy.expressions import (
 )
 from jumpy.iterators import Iterator
 from jumpy.serialize import serialize_constraint, serialize_expr
+from jumpy.backend import Backend, get_backend
 
 
 def minimize(expr: Expr) -> Objective:
@@ -101,7 +102,15 @@ class Model:
         m.optimize()
     """
 
-    def __init__(self):
+    def __init__(self, backend: str = "juliac"):
+        """
+        Create a new model.
+
+        Args:
+            backend: "juliac" (default, no Julia needed) or "juliacall"
+                     (uses juliacall, installs Julia lazily if needed).
+        """
+        self._backend: Backend = get_backend(backend)
         self._var_blocks: list[VariableBlock] = []
         self._constraint_groups: list[ConstraintGroup] = []
         self._individual_constraints: list[Constraint] = []
@@ -191,17 +200,12 @@ class Model:
 
     def optimize(self) -> None:
         """
-        Serialize the model and send it to the compiled Julia library for solving.
+        Solve the model using the selected backend.
 
-        The Julia side:
-        1. Reconstructs MOI.ScalarNonlinearFunction trees from flat arrays
-        2. Wraps constraint groups in GeneratorOptInterface.IteratedFunction
-        3. Adds bridges
-        4. Calls HiGHS
-        5. Returns the solution vector
+        - juliac backend: serializes to flat arrays, calls compiled shared library
+        - juliacall backend: builds MOI model directly in Julia via juliacall
         """
-        model_data = self._serialize()
-        self._solution = _call_julia_solver(model_data)
+        self._solution = self._backend.optimize(self)
 
     def _serialize(self) -> dict:
         """Serialize the entire model for the Julia C ABI."""
@@ -263,13 +267,3 @@ class Model:
         return self._solution[var.index]
 
 
-def _call_julia_solver(model_data: dict) -> list[float]:
-    """
-    Call the compiled Julia shared library via ctypes.
-
-    TODO: Implement once the Julia library is compiled with juliac.
-    """
-    raise NotImplementedError(
-        "Julia solver backend not yet available. "
-        "Compile the Julia library with juliac and place it on the library path."
-    )
