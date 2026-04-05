@@ -10,18 +10,24 @@ Python modeling libraries like Pyomo and CVXPY construct models at Python speed.
 
 The key idea: most large models are a small number of **constraint groups** — a parametric template repeated over a large index set. JuMPy builds one expression template per group in Python, then [GenOpt](https://github.com/blegat/GenOpt.jl) expands it into individual constraints in compiled Julia.
 
-```
-Python (JuMPy)                        Compiled Julia (juliac)
-──────────────────────────────────────────────────────────────
-Few expression templates    ──FFI──>  GenOpt
-  (built once, cheap)                   expands into millions
-                                        of constraints (fast)
-                                            │
-                                        MathOptInterface
-                                            │
-                                        HiGHS solver
-                                            │
-Solution values             <──FFI──  result vector
+```mermaid
+flowchart LR
+    subgraph Python ["Python (JuMPy)"]
+        templates["Few expression templates\n(built once, cheap)"]
+        solution["Solution values"]
+    end
+
+    subgraph Julia ["Compiled Julia (juliac)"]
+        genopt["GenOpt\nexpands into millions\nof constraints (fast)"]
+        moi["MathOptInterface"]
+        highs["HiGHS solver"]
+        result["Result vector"]
+
+        genopt --> moi --> highs --> result
+    end
+
+    templates -- "FFI" --> genopt
+    result -- "FFI" --> solution
 ```
 
 The Python workload is proportional to the **number of groups**, not the number of constraints.
